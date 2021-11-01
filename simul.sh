@@ -1,10 +1,10 @@
 #!/bin/sh
 
 update_all_servers_time() {
-  local time=$1
+  time=$1
 
-  for port in $ALISSES_PORT $BIANCA_PORT $CHARLOTTE_PORT $DIANO_PORT $ELISIO_PORT; do
-    freechains-host --port=$port now $time
+  for port in $N $M $O; do
+    freechains-host --port="$port" now "$time"
   done
 }
 
@@ -23,34 +23,34 @@ O="34580"
 O_PATH="/tmp/fchs-o"
 freechains-host --port="$O" start "$O_PATH" &
 
-sleep 1
+sleep 3
 
 # Update all servers time to 2021-01-01 18:00
 update_all_servers_time 1609534800
 
 # Alisses
-ALISSES_PUB=$(freechains --port=$N crypto pubpvt "alisson-pwd" | cut -d' ' -f1)
-ALISSES_PVT=$(freechains --port=$N crypto pubpvt "alisson-pwd" | cut -d' ' -f2)
+ALISSES_PUB=$(freechains --port="$N" crypto pubpvt "alisson-pwd" | cut -d' ' -f1)
+ALISSES_PVT=$(freechains --port="$N" crypto pubpvt "alisson-pwd" | cut -d' ' -f2)
 
 # Bianca
-BIANCA_PUB=$(freechains --port=$N crypto pubpvt "bianca-pwd" | cut -d' ' -f1)
-BIANCA_PVT=$(freechains --port=$N crypto pubpvt "bianca-pwd" | cut -d' ' -f2)
+# BIANCA_PUB=$(freechains --port="$N" crypto pubpvt "bianca-pwd" | cut -d' ' -f1)
+BIANCA_PVT=$(freechains --port="$N" crypto pubpvt "bianca-pwd" | cut -d' ' -f2)
 
 # Charlotte
-CHARLOTTE_PUB=$(freechains --port=$M crypto pubpvt "charlotte-pwd" | cut -d' ' -f1)
-CHARLOTTE_PVT=$(freechains --port=$M crypto pubpvt "charlotte-pwd" | cut -d' ' -f2)
+# CHARLOTTE_PUB=$(freechains --port="$M" crypto pubpvt "charlotte-pwd" | cut -d' ' -f1)
+CHARLOTTE_PVT=$(freechains --port="$M" crypto pubpvt "charlotte-pwd" | cut -d' ' -f2)
 
 # Diano
-DIANO_PUB=$(freechains --port=$M crypto pubpvt "diano-pwd" | cut -d' ' -f1)
-DIANO_PVT=$(freechains --port=$M crypto pubpvt "diano-pwd" | cut -d' ' -f2)
+# DIANO_PUB=$(freechains --port="$M" crypto pubpvt "diano-pwd" | cut -d' ' -f1)
+DIANO_PVT=$(freechains --port="$M" crypto pubpvt "diano-pwd" | cut -d' ' -f2)
 
 # Elísio
-ELISIO_PUB=$(freechains --port=$O crypto pubpvt "elisio-pwd" | cut -d' ' -f1)
-ELISIO_PVT=$(freechains --port=$O crypto pubpvt "elisio-pwd" | cut -d' ' -f2)
+# ELISIO_PUB=$(freechains --port="$O" crypto pubpvt "elisio-pwd" | cut -d' ' -f1)
+# ELISIO_PVT=$(freechains --port="$O" crypto pubpvt "elisio-pwd" | cut -d' ' -f2)
 
 # Alisses cria fórum
 freechains --port="$N" chains join '#receitas' "$ALISSES_PUB"
-freechains --port="$N" chain '#receitas' post - <<EOF
+freechains --port="$N" --sign="$ALISSES_PVT" chain '#receitas' post - <<EOF
 Boa noite!
 
 Este fórum será usado para compartilhar receitas caseiras.
@@ -58,7 +58,7 @@ Este fórum será usado para compartilhar receitas caseiras.
 Compartilhe suas melhores receitas :)
 EOF
 
-freechains --port="$N" chain '#receitas' post - <<EOF
+freechains --port="$N" --sign="$ALISSES_PVT" chain '#receitas' post - <<EOF
 # Pizza brotinho de calabresa:
 
 ## MASSA:
@@ -85,7 +85,7 @@ EOF
 update_all_servers_time 1612213200
 
 # Bianca se junta e posta uma receita
-freechains --port="$N" chain '#receitas' post - <<EOF
+freechains --port="$N" --sign="$BIANCA_PVT" chain '#receitas' post - <<EOF
 # Arroz de Brócolis
 
 ## Ingredientes
@@ -107,7 +107,7 @@ freechains --port="$N" chain '#receitas' post - <<EOF
 EOF
 
 # Alisses decide dar like na receita para desbloquear a mensagem
-freechains --port="$N" --sign="$ALISSON_PVT" chain '#receitas' like $(freechains --port="$N" chain '#receitas' heads blocked)
+freechains --port="$N" --sign="$ALISSES_PVT" chain '#receitas' like "$(freechains --port="$N" chain '#receitas' heads blocked)"
 
 # Update all servers time to 2021-03-01 18:00
 update_all_servers_time 1614632400
@@ -139,8 +139,50 @@ EOF
 freechains --port="$M" peer "0.0.0.0:$N" send '#receitas'
 
 # Alisses e Bianca curtem a postagem
-freechains --port="$N" --sign="$ALISSON_PVT" chain '#receitas' like $(freechains --port="$N" chain '#receitas' heads blocked)
-freechains --port="$N" --sign="$BIANCA_PVT" chain '#receitas' like $(freechains --port="$N" chain '#receitas' heads blocked)
+CHARLOTTE_POST=$(freechains --port="$N" chain '#receitas' heads blocked)
+echo "$CHARLOTTE_POST"
+
+freechains --port="$N" --sign="$ALISSES_PVT" chain '#receitas' like "$CHARLOTTE_POST"
+freechains --port="$N" --sign="$BIANCA_PVT" chain '#receitas' like "$CHARLOTTE_POST"
 
 # Charlotte agora tem reputação para postar e dar likes
 freechains --port="$M" peer "0.0.0.0:$N" recv '#receitas'
+
+# Update all servers time to 2021-03-15 18:00
+update_all_servers_time 1615842000
+
+# Elísio descobre a cadeia, mas é mais chegado a comer, não a fazer comida, então fica apenas observando
+freechains --port="$O" chains join '#receitas' "$ALISSES_PUB"
+freechains --port="$O" peer "0.0.0.0:$M" recv '#receitas'
+
+# Update all servers time to 2021-03-20 18:00
+update_all_servers_time 1616274000
+
+# Diano descobre o fórum, acha as receitas muito amadoras para seu gosto e decide rebaixar os outros usuários
+freechains --port="$M" --sign="$DIANO_PVT" chain '#receitas' post inline 'Se vocês acham que isso são receitas, precisam comer mais vezes. Amadores.'
+freechains --port="$M" peer "0.0.0.0:$N" send '#receitas'
+
+# Alisson, Bianca e Charlotte vêem a mensagem e acham de mau gosto, dão então dislike
+DIANO_POST=$(freechains --port="$N" chain '#receitas' heads blocked)
+echo "$DIANO_POST"
+
+freechains --port="$N" --sign="$ALISSES_PVT" chain '#receitas' dislike "$DIANO_POST"
+freechains --port="$N" --sign="$BIANCA_PVT" chain '#receitas' dislike "$DIANO_POST"
+
+DIANO_POST=$(freechains --port="$M" chain '#receitas' heads blocked)
+echo "$DIANO_POST"
+
+freechains --port="$M" --sign="$CHARLOTTE_PVT" chain '#receitas' dislike "$DIANO_POST"
+
+# Update all servers time to 2021-03-25 18:00
+update_all_servers_time 1616706000
+
+# Quando Diano abre a corrente para ver os outros usuários lhe glorificando, percebe que sua mensagem não entrou no consenso da cadeia
+freechains --port="$M" peer "0.0.0.0:$N" recv '#receitas'
+
+# Update all servers time to 2021-03-30 18:00
+update_all_servers_time 1617138000
+
+# Elísio quando vai atualizar a cadeia para receber receitas novas, não vê a mensagem de Diano
+# freechains --port="$O" peer "0.0.0.0:$M" recv '#receitas'
+# Por algum motivo, ao rodar o comando acima, a corrente '#receitas' no nó "O" se corrompe e não somos mais capazes de fazer qualquer operação com a corrente.
